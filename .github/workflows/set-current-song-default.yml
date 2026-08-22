@@ -1,0 +1,41 @@
+name: Set current piano song default
+
+on:
+  push:
+    paths:
+      - '.github/workflows/set-current-song-default.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-default-url:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prefill current song URL
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old = '<input class="ytInput" id="youtubeUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="YouTubeのURLを貼り付け" />'
+          new = '<input class="ytInput" id="youtubeUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="https://youtube.com/watch?v=wMSs5oaLnxw&amp;si=F0_D8P1FJYnTnC81" placeholder="YouTubeのURLを貼り付け" />'
+          if old not in text:
+              if new in text:
+                  print('Already updated')
+              else:
+                  raise SystemExit('Target input tag was not found')
+          else:
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+      - name: Commit change
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Prefill current piano practice YouTube URL"
+          git push
